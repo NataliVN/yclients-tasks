@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Задачник YCLIENTS</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background: #f4f5f7; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; }
+    .form { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .form input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+    .btn { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .btn:hover { background: #0056b3; }
+    .task { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #007bff; }
+    .task.overdue { border-left-color: #dc3545; background: #fff8f8; }
+    .task.done { opacity: 0.6; text-decoration: line-through; border-left-color: #28a745; }
+    .meta { font-size: 13px; color: #666; margin: 8px 0; }
+    .badge { background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📋 Задачи сотрудников</h2>
+    
+    <form class="form" id="taskForm">
+      <input type="text" name="title" placeholder="Название задачи" required>
+      <input type="datetime-local" name="deadline" required>
+      <button type="submit" class="btn">Создать</button>
+    </form>
+
+    <div id="taskList">Загрузка...</div>
+  </div>
+
+  <script>
+    // 1. Читаем параметры из URL, которые передал YCLIENTS
+    const params = new URLSearchParams(window.location.search);
+    const salonId = params.get("salon_id");
+    const hash = params.get("hash");
+
+    if (!salonId || !hash) {
+      document.getElementById("taskList").innerHTML = 
+        "<p style='color:red'>⚠️ Виджет открыт без параметров salon_id и hash. Откройте его через YCLIENTS или добавьте ?salon_id=123&hash=... в URL.</p>";
+    }
+
+    const qs = `?salon_id=${salonId}&hash=${hash}`;
+    // В локальной разработке API находится на том же порту
+    const API_URL = `/api`; 
+
+    // Сообщаем YCLIENTS, что iframe загрузился
+    window.addEventListener("load", () => {
+      window.parent.postMessage({ type: "iframe_ready", payload: { success: true } }, "*");
+    });
+
+    // 2. Загрузка задач
+     async function loadTasks() {
+      if (!salonId) return;
+      try {
+        const res = await fetch(`${API_URL}/tasks${qs}`);
+        
+        // Если сервер вернул ошибку (например, 500), читаем её как текст, а не JSON
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Сервер вернул ошибку:", res.status, errorText);
+          document.getElementById("taskList").innerHTML = 
+            `<p style="color:red">Ошибка сервера ${res.status}. Откройте терминал VS Code, чтобы увидеть детали.</p>`;
+          return;
+        }
+        
+        const tasks = await res.json();
+        const list = document.getElementById("taskList");
+        
+        if (tasks.length === 0) {
+          list.innerHTML = "<p>Нет активных задач. Создайте первую!</p>";
+          return;
+        }
+
+        list.innerHTML = tasks.map(t => {
+          const isOverdue = !t.done && new Date(t.deadline) < new Date();
+          return `
+            <div class="task ${t.done ? "done" : ""} ${isOverdue ? "overdue" : ""}">
+              <div style="font-weight: 600;">${t.title}</div>
+              <div class="meta">
+                Дедлайн: ${new Date(t.deadline).toLocaleString("ru-RU")}
+                ${isOverdue ? '<span class="badge">Просрочено</span>' : ""}
+              </div>
+              ${!t.done ? `<button class="btn" style="padding: 6px 12px; font-size: 13px;" onclick="completeTask('${t.id}')">✓ Выполнено</button>` : "<span>В архиве</span>"}
+            </div>
+          `;
+        }).join("");
+      } catch (err) {
+        console.error("Критическая ошибка при загрузке:", err);
+      }
+    }
+    
+    // 3. Создание задачи
+    document.getElementById("taskForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      
+      await fetch(`${API_URL}/tasks${qs}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          title: fd.get("title"), 
+          deadline: fd.get("deadline") 
+        })
+      });
+      
+      e.target.reset();
+      loadTasks();
+    };
+
+    // 4. Завершение задачи
+    window.completeTask = async (id) => {
+      await fetch(`${API_URL}/tasks/${id}${qs}`, { method: "PATCH" });
+      loadTasks();
+    };
+
+    loadTasks();
+  </script>
+</body>
+</html>
