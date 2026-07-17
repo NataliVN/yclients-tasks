@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "YCLIENTS Задачник",
+  "version": "1.0",
+  "description": "Добавляет панель задач в правую часть интерфейса YCLIENTS",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "*://*.yclients.com/*",
+    "http://localhost:3000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.yclients.com/*"],
+      "js": ["config.js", "content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Настройки задачника"
+  }
+}

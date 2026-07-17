@@ -1,0 +1,67 @@
+/* styles.css */
+
+/* Кнопка-вкладка справа */
+#yc-task-btn {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: right center;
+  background-color: #ff6b00; /* Фирменный оранжевый YCLIENTS или ваш цвет */
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px 8px 0 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 99999;
+  box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+  transition: background-color 0.2s, right 0.2s;
+}
+
+#yc-task-btn:hover {
+  background-color: #e55e00;
+}
+
+#yc-task-btn.active {
+  right: 400px; /* Сдвигаем кнопку, когда панель открыта */
+}
+
+/* Боковая панель */
+#yc-task-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 400px;
+  height: 100vh;
+  background: white;
+  box-shadow: -5px 0 20px rgba(0,0,0,0.15);
+  z-index: 99998;
+  flex-direction: column;
+  border-left: 1px solid #e0e0e0;
+}
+
+/* Кнопка закрытия */
+#yc-task-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 28px;
+  color: #888;
+  cursor: pointer;
+  z-index: 10;
+  line-height: 1;
+}
+
+#yc-task-close:hover {
+  color: #333;
+}
+
+/* Iframe внутри панели */
+#yc-task-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #f9f9f9;
+}
